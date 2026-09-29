@@ -27,7 +27,7 @@ Unknown words are shown in red, target words in green, and unverified phrases in
 [segmentation policy](docs/segmentation-policy.md)). Use `--wordlist path/to/anki.txt` instead of
 `--hsk` for your own vocabulary; an Anki "Notes in Plain Text" export works directly.
 
-Generate with any OpenAI-compatible endpoint, e.g. llama.cpp's `llama-server` on its default port:
+Generate with any OpenAI-compatible endpoint, e.g. llama.cpp's `llama-server` started by `scripts/serve.py` (port 8081):
 
 ```
 uv run mandarin generate --hsk 1 --topic "在超市买东西" --target 超市 --no-thinking
@@ -42,7 +42,7 @@ uv run mandarin eval run --model qwen3.5-2b --no-thinking
 uv run mandarin eval summarize eval/results/<file>.jsonl
 ```
 
-Endpoint settings: `--base-url` (default `http://127.0.0.1:8080/v1`), `--model`, `--api-key`, or
+Endpoint settings: `--base-url` (default `http://127.0.0.1:8081/v1`), `--model`, `--api-key`, or
 the environment variables `MANDARIN_BASE_URL`, `MANDARIN_MODEL`, `MANDARIN_API_KEY`.
 
 ## Layout

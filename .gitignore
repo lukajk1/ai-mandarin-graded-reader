@@ -10,9 +10,10 @@ build/
 # Eval runs are regenerated; commit selected reports deliberately.
 eval/results/
 
-# Model weights
+# Model weights and local inference binaries
 *.gguf
 models/
+tools/
 
 .env
 

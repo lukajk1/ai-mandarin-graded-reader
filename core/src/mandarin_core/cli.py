@@ -130,7 +130,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     model = argparse.ArgumentParser(add_help=False)
     model.add_argument(
-        "--base-url", default=os.environ.get("MANDARIN_BASE_URL", "http://127.0.0.1:8080/v1")
+        "--base-url", default=os.environ.get("MANDARIN_BASE_URL", "http://127.0.0.1:8081/v1")
     )
     model.add_argument("--model", default=os.environ.get("MANDARIN_MODEL", "local"))
     model.add_argument("--api-key", default=os.environ.get("MANDARIN_API_KEY"))
