@@ -1,0 +1,58 @@
+# Few-shot examples: checked passages shown to the model as model answers.
+# Topics and target words deliberately differ from eval/cases.toml so they don't leak answers.
+# Targets come from the level above the profile, like the eval cases.
+# Each passage must pass the checker for its profile (core/tests/test_examples.py enforces this).
+
+[[examples]]
+profile = "hsk1"
+topic = "在学校上课 (a day at school)"
+targets = ["已经", "复习"]
+min_coverage = 0.95
+text = """
+早上七点，小明已经起床了。他吃了一点东西，就去学校了。今天上午有汉语课，老师说明天有考试，学生们要复习。下午没有课，小明和小红一起去图书馆看书。小红问小明：“你准备好了吗？”小明说：“还没有，我们一起复习吧。”他们在图书馆学习了一个下午，晚上六点回家了。
+"""
+
+[[examples]]
+profile = "hsk1"
+topic = "家人过生日 (a family birthday)"
+targets = ["礼物", "快乐"]
+min_coverage = 0.90
+text = """
+今天是妈妈的生日。小明和爸爸早上就去商店买东西。爸爸买了一些水果，小明想给妈妈买一个礼物。他看了很多东西，最后买了一本书。回到家，他们一起做菜。晚上，妈妈回来了，看到桌子上有很多菜，她很高兴。小明说：“妈妈，生日快乐！这是我的礼物。”妈妈说：“谢谢你们！”
+"""
+
+[[examples]]
+profile = "hsk1-2"
+topic = "去医院看病 (seeing a doctor)"
+targets = ["情况", "好好"]
+min_coverage = 0.95
+text = """
+小红这几天身体不太好，晚上睡不好，白天也不想吃饭。星期一早上，妈妈带她去医院看病。医生问了她很多问题，又给她做了检查。医生说：“你的情况还好，回家好好休息，多喝水，一个星期以后就会好的。”小红听了很高兴。回家的路上，妈妈去买了一些水果。妈妈说：“你要多吃水果。”
+"""
+
+[[examples]]
+profile = "hsk1-2"
+topic = "在家做饭 (cooking at home)"
+targets = ["简单", "甜", "成功"]
+min_coverage = 0.90
+text = """
+星期天，爸爸妈妈都不在家，小明想自己做一个菜。他觉得做菜很简单。第一次做得不好吃，太甜了。他又做了一次，这次味道好多了。晚上爸爸妈妈回来了，吃了他做的菜，都说很好吃。小明很高兴，他觉得自己成功了。他说：“做菜不简单，可是很有意思。”
+"""
+
+[[examples]]
+profile = "hsk1-3"
+topic = "去图书馆借书 (borrowing books at the library)"
+targets = ["材料", "失败"]
+min_coverage = 0.95
+text = """
+小红过几天有一个很重要的考试。上次考试她失败了，所以这次她想好好准备。星期六上午，她去图书馆借书，还找了很多学习材料。图书馆里很安静，她在那里学习了一整天。她给自己安排了一个计划：每天看两个小时的书，做一些练习。她相信，只要努力，这次一定能考好。
+"""
+
+[[examples]]
+profile = "hsk1-3"
+topic = "学做一个新菜 (learning to cook a new dish)"
+targets = ["盐", "酸", "辣"]
+min_coverage = 0.90
+text = """
+小明最近在学做一个新菜。第一次做的时候，他放了太多盐，家里人都说不好吃。第二次，他又做得太酸了。小明有点儿不高兴，可是他还想再做。他去问妈妈，妈妈告诉他每一步应该怎么做。第三次，他少放了一点盐，还做得有一点辣。这次大家都说很好吃，小明终于成功了。
+"""

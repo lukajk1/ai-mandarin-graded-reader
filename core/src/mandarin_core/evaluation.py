@@ -7,8 +7,15 @@ from collections.abc import Iterable
 from dataclasses import dataclass
 from pathlib import Path
 
-from mandarin_core.generate import GenerationResult, PassageRequest, generate
-from mandarin_core.llm import ChatClient
+from mandarin_core.generate import (
+    Attempt,
+    GenerationResult,
+    PassageRequest,
+    generate,
+    load_examples,
+    score,
+)
+from mandarin_core.llm import ChatClient, Completion
 from mandarin_core.vocab import VocabProfile, load_hsk
 
 
@@ -40,8 +47,13 @@ def pick_targets(
     return tuple(e.word for e in random.Random(case_id).sample(candidates, k))
 
 
-def load_cases(path: Path, root: Path | None = None) -> list[EvalCase]:
-    """Expand the grid in `path`. Relative wordlist paths resolve against `root` (default: cwd)."""
+def load_cases(
+    path: Path, root: Path | None = None, examples: Path | None = None
+) -> list[EvalCase]:
+    """Expand the grid in `path`. Relative wordlist paths resolve against `root` (default: cwd).
+
+    With `examples`, each request carries the few-shot examples written for its profile.
+    """
     config = tomllib.loads(path.read_text(encoding="utf-8"))
     defaults = config["defaults"]
     root = root or Path.cwd()
@@ -64,6 +76,7 @@ def load_cases(path: Path, root: Path | None = None) -> list[EvalCase]:
                     min_coverage=d["min_coverage"],
                     length=tuple(defaults["length"]),
                     names=tuple(defaults["names"]),
+                    examples=load_examples(examples, p["name"]) if examples else (),
                 )
                 cases.append(EvalCase(case_id, p["name"], topic["id"], d["name"], request))
     return cases
@@ -108,6 +121,38 @@ def run_eval(
                 row = {"case": case.id, "difficulty": case.difficulty, "error": repr(exc)}
             out.write(json.dumps(row, ensure_ascii=False) + "\n")
             out.flush()
+            rows.append(row)
+    return rows
+
+
+def manual_path(directory: Path, case_id: str, kind: str) -> Path:
+    return directory / f"{case_id.replace('/', '__')}.{kind}.txt"
+
+
+def import_manual(
+    cases: Iterable[EvalCase], directory: Path, model: str, out_path: Path
+) -> list[dict]:
+    """Score hand-written passages (`<case>.initial.txt`, optional `<case>.revision.txt`).
+
+    Used for baselines that aren't reachable through an API, e.g. passages written by a
+    frontier model in a chat session under the same one-revision protocol.
+    """
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    rows = []
+    with out_path.open("w", encoding="utf-8") as out:
+        for case in cases:
+            attempts: list[Attempt] = []
+            for kind in ("initial", "revision"):
+                path = manual_path(directory, case.id, kind)
+                if not path.exists() or (attempts and attempts[-1].verdict.passed):
+                    break
+                text = path.read_text(encoding="utf-8").strip()
+                attempts.append(score(case.request, Completion(text, 0.0, model), kind))
+            if attempts:
+                row = result_row(case, GenerationResult(case.request, attempts))
+            else:
+                row = {"case": case.id, "difficulty": case.difficulty, "error": "no passage"}
+            out.write(json.dumps(row, ensure_ascii=False) + "\n")
             rows.append(row)
     return rows
 

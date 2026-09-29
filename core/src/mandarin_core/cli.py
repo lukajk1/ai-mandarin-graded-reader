@@ -8,8 +8,14 @@ from datetime import datetime
 from pathlib import Path
 
 from mandarin_core.checker import Report, Status, check
-from mandarin_core.evaluation import load_cases, read_rows, run_eval, summarize
-from mandarin_core.generate import DEFAULT_NAMES, GenerationResult, PassageRequest, generate
+from mandarin_core.evaluation import import_manual, load_cases, read_rows, run_eval, summarize
+from mandarin_core.generate import (
+    DEFAULT_NAMES,
+    GenerationResult,
+    PassageRequest,
+    generate,
+    load_examples,
+)
 from mandarin_core.llm import ChatClient
 from mandarin_core.vocab import VocabProfile, load_hsk
 
@@ -77,11 +83,13 @@ def cmd_check(args: argparse.Namespace) -> None:
 
 
 def cmd_generate(args: argparse.Namespace) -> None:
+    profile = _profile(args)
     request = PassageRequest(
-        profile=_profile(args),
+        profile=profile,
         topic=args.topic,
         targets=tuple(args.target),
         min_coverage=args.min_coverage,
+        examples=load_examples(Path(args.examples), profile.name) if args.examples else (),
     )
     result: GenerationResult = generate(_client(args), request, args.revisions)
     for attempt in result.attempts:
@@ -99,15 +107,29 @@ def cmd_eval_cases(args: argparse.Namespace) -> None:
         print(f"{case.id:32} targets {'、'.join(r.targets):20} min coverage {r.min_coverage:.0%}")
 
 
-def cmd_eval_run(args: argparse.Namespace) -> None:
-    cases = load_cases(Path(args.cases))[: args.limit]
+def _results_path(args: argparse.Namespace, label: str) -> Path:
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    out = Path(args.out or f"eval/results/{stamp}-{args.model.replace('/', '_')}.jsonl")
-    print(f"running {len(cases)} cases against {args.model} -> {out}", file=sys.stderr)
-    rows = run_eval(cases, _client(args), out, args.revisions)
+    return Path(args.out or f"eval/results/{stamp}-{label.replace('/', '_')}.jsonl")
+
+
+def _write_summary(rows: list[dict], out: Path) -> None:
     summary = summarize(rows)
     out.with_suffix(".md").write_text(summary + "\n", encoding="utf-8")
     print(summary)
+
+
+def cmd_eval_run(args: argparse.Namespace) -> None:
+    examples = Path(args.examples) if args.examples else None
+    cases = load_cases(Path(args.cases), examples=examples)[: args.limit]
+    out = _results_path(args, args.model + ("-examples" if examples else ""))
+    print(f"running {len(cases)} cases against {args.model} -> {out}", file=sys.stderr)
+    _write_summary(run_eval(cases, _client(args), out, args.revisions), out)
+
+
+def cmd_eval_import(args: argparse.Namespace) -> None:
+    out = _results_path(args, args.model)
+    rows = import_manual(load_cases(Path(args.cases)), Path(args.dir), args.model, out)
+    _write_summary(rows, out)
 
 
 def cmd_eval_summarize(args: argparse.Namespace) -> None:
@@ -148,6 +170,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("generate", parents=[vocab, model], help="generate and check a passage")
     p.add_argument("--topic", required=True)
     p.add_argument("--min-coverage", type=float, default=0.95)
+    p.add_argument("--examples", help="few-shot examples file (e.g. data/examples.toml)")
     p.set_defaults(func=cmd_generate)
 
     eval_parser = sub.add_parser("eval", help="evaluation grid")
@@ -160,7 +183,15 @@ def build_parser() -> argparse.ArgumentParser:
     p = eval_sub.add_parser("run", parents=[cases, model], help="run all cases through a model")
     p.add_argument("--limit", type=int, help="only the first N cases")
     p.add_argument("--out", help="results path (default eval/results/<time>-<model>.jsonl)")
+    p.add_argument("--examples", help="few-shot examples file (e.g. data/examples.toml)")
     p.set_defaults(func=cmd_eval_run)
+    p = eval_sub.add_parser(
+        "import", parents=[cases], help="score hand-written passages (<case>.initial.txt ...)"
+    )
+    p.add_argument("dir", help="directory of passage files, e.g. eval/manual/opus-5.5")
+    p.add_argument("--model", required=True, help="label for the results")
+    p.add_argument("--out", help="results path (default eval/results/<time>-<model>.jsonl)")
+    p.set_defaults(func=cmd_eval_import)
     p = eval_sub.add_parser("summarize", help="summarize a results file")
     p.add_argument("results")
     p.set_defaults(func=cmd_eval_summarize)

@@ -1,6 +1,7 @@
 """Segmentation policy edge cases. Each test maps to a rule in docs/segmentation-policy.md."""
 
 import pytest
+
 from mandarin_core.checker import Status, check, composition_rule
 from mandarin_core.segment import fine_segment
 from mandarin_core.vocab import VocabProfile

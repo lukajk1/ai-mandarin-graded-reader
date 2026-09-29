@@ -4,6 +4,7 @@ import json
 
 import httpx
 import pytest
+
 from mandarin_core.llm import ChatClient
 
 

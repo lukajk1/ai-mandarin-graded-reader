@@ -1,6 +1,8 @@
 """Prompted passage generation with checker feedback: generate, check, optionally revise."""
 
+import tomllib
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Literal
 
 from mandarin_core.checker import Report, check
@@ -17,6 +19,25 @@ SYSTEM_PROMPT = (
 
 
 @dataclass(frozen=True)
+class Example:
+    """A checked passage shown to the model as a model answer (few-shot prompting)."""
+
+    topic: str
+    targets: tuple[str, ...]
+    text: str
+
+
+def load_examples(path: Path, profile: str) -> tuple[Example, ...]:
+    """Examples in `path` written for the profile named `profile` (e.g. "hsk1-2")."""
+    config = tomllib.loads(path.read_text(encoding="utf-8"))
+    return tuple(
+        Example(e["topic"], tuple(e["targets"]), e["text"].strip())
+        for e in config["examples"]
+        if e["profile"] == profile
+    )
+
+
+@dataclass(frozen=True)
 class PassageRequest:
     profile: VocabProfile
     topic: str
@@ -24,6 +45,7 @@ class PassageRequest:
     min_coverage: float
     length: tuple[int, int] = (100, 150)
     names: tuple[str, ...] = DEFAULT_NAMES
+    examples: tuple[Example, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -75,8 +97,15 @@ def build_messages(request: PassageRequest) -> list[dict[str, str]]:
         f"each at least once: {'、'.join(request.targets)}.\n"
         f"If you need names, use only: {'、'.join(request.names)}.\n"
         f"At least {request.min_coverage:.0%} of the words must come from the known-word list.\n"
-        f"\nKnown words:\n{known}"
     )
+    if request.examples:
+        user += "\nExamples of good passages for this learner (different topics and new words):\n"
+        for example in request.examples:
+            user += (
+                f"\nTopic: {example.topic}. New words: {'、'.join(example.targets)}.\n"
+                f"{example.text}\n"
+            )
+    user += f"\nKnown words:\n{known}"
     return [{"role": "system", "content": SYSTEM_PROMPT}, {"role": "user", "content": user}]
 
 
@@ -92,15 +121,20 @@ def build_revision_messages(request: PassageRequest, previous: Attempt) -> list[
     ]
 
 
+def score(
+    request: PassageRequest, completion: Completion, kind: Literal["initial", "revision"]
+) -> Attempt:
+    report = check(completion.text, request.profile, request.targets, request.names)
+    return Attempt(kind, completion, report, judge(report, request))
+
+
 def _attempt(
     client: ChatClient,
     request: PassageRequest,
     messages: list[dict[str, str]],
     kind: Literal["initial", "revision"],
 ) -> Attempt:
-    completion = client.complete(messages)
-    report = check(completion.text, request.profile, request.targets, request.names)
-    return Attempt(kind, completion, report, judge(report, request))
+    return score(request, client.complete(messages), kind)
 
 
 def generate(
