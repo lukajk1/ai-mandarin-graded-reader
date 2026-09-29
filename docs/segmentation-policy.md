@@ -19,6 +19,10 @@ Treating those as single unknown words would flag perfectly readable text.
    request's target words and allowed names.
 2. **Lexicon words are atomic.** A token that is a lexicon word is judged as a whole and never split.
    马上 is an HSK 1 word, so a learner who knows 马 and 上 but not 马上 gets 马上 marked unknown.
+   This also flags transparent lexicon words (家里, 常常) when the learner only knows their parts.
+   *Decision (2026-09-29): accepted.* Presenting an obvious word as new costs the reader little;
+   letting an opaque word like 马上 pass as known defeats the checker, and any rule loose enough to
+   accept 家里 (known part + localizer) would also accept 马上.
 3. **Phrases are split and judged by their parts.** A multi-character token that jieba produced but
    that isn't a lexicon word is split into the fewest lexicon words (ties: longest piece first).
    Each piece is judged separately. The phrase is labelled by the pattern it follows:
