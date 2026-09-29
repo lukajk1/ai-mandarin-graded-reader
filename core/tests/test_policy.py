@@ -85,6 +85,13 @@ def test_free_words_count_as_known():
     assert report.unknown_words == []
 
 
+def test_names_are_not_glued_to_neighbouring_words():
+    # jieba alone gives 小 + 明说 ("to say outright"), breaking the allowed name.
+    report = check("小明说：“好。”", HSK1, free_words=["小明"])
+    assert [s.text for s in report.segments if s.status] == ["小明", "说", "好"]
+    assert report.unknown_words == []
+
+
 def test_unlisted_name_is_unknown():
     report = check("小丽是学生。", HSK1)
     assert report.unknown_words != []

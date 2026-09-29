@@ -111,9 +111,22 @@ def han_char_count(text: str) -> int:
     return len(HAN_RE.findall(text))
 
 
-def segment(text: str, lexicon: Collection[str]) -> list[str]:
-    """Coarse segmentation followed by lexicon merging. Fine splitting happens in the checker."""
-    return merge_lexical(coarse_segment(text), lexicon)
+def segment(text: str, lexicon: Collection[str], protected: Iterable[str] = ()) -> list[str]:
+    """Coarse segmentation followed by lexicon merging. Fine splitting happens in the checker.
+
+    `protected` strings (character names) are cut out before jieba runs, so it can't glue them
+    to neighbours: 小明说 would otherwise become 小 + 明说 ("to say outright").
+    """
+    names = sorted({p for p in protected if p}, key=len, reverse=True)
+    if not names:
+        return merge_lexical(coarse_segment(text), lexicon)
+    tokens: list[str] = []
+    for part in re.split(f"({'|'.join(map(re.escape, names))})", text):
+        if part in names:
+            tokens.append(part)
+        elif part:
+            tokens.extend(merge_lexical(coarse_segment(part), lexicon))
+    return tokens
 
 
 def tokens_of_kind(tokens: Iterable[str], kind: Kind) -> list[str]:

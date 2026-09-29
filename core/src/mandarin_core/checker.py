@@ -115,14 +115,15 @@ def check(
     """
     target_list = _unique(targets)
     target_set = frozenset(target_list)
-    known = profile.known | frozenset(free_words)
+    free_list = list(free_words)
+    known = profile.known | frozenset(free_list)
     lexicon = known | target_set | profile.learning | load_hsk().keys()
 
     segments: list[Segment] = []
     composed: dict[str, str] = {}
     unverified: list[str] = []
     unverified_known = 0
-    for token in segment(text, lexicon):
+    for token in segment(text, lexicon, protected=free_list):
         kind = kind_of(token)
         if kind != "han":
             segments.append(Segment(token, kind))
