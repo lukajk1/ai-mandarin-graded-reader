@@ -1,0 +1,24 @@
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+build/
+
+# Eval runs are regenerated; commit selected reports deliberately.
+eval/results/
+
+# Model weights
+*.gguf
+models/
+
+.env
+
+# Personal vocabulary exports
+data/private/
+
+# Claude Code project files
+.claude/
+CLAUDE.local.md

@@ -1,0 +1,44 @@
+[project]
+name = "mandarin-applied-ai"
+version = "0.1.0"
+description = "Personalized Mandarin reading passages with measurable vocabulary control"
+requires-python = ">=3.12"
+dependencies = ["mandarin-core"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["core"]
+
+[tool.uv.sources]
+mandarin-core = { workspace = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "ruff>=0.6",
+    "pyright>=1.1.380",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM", "RUF"]
+# Chinese punctuation in strings and comments is intentional.
+ignore = ["RUF001", "RUF002", "RUF003"]
+
+[tool.pytest.ini_options]
+testpaths = ["core/tests"]
+filterwarnings = [
+    # jieba 0.42 uses invalid escape sequences and pkg_resources.
+    "ignore::SyntaxWarning",
+    "ignore::DeprecationWarning:jieba",
+]
+
+[tool.pyright]
+include = ["core/src", "core/tests", "scripts"]
+pythonVersion = "3.12"
+typeCheckingMode = "standard"

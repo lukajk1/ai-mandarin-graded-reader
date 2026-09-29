@@ -1,0 +1,59 @@
+# Evaluation grid: profiles x topics x difficulties (3 x 5 x 2 = 30 cases).
+# Target words are drawn deterministically (seeded by case id) from the most frequent
+# multi-character words of `target_level`, so every run gets the same cases.
+
+[defaults]
+length = [100, 150]
+names = ["小明", "小红"]
+target_pool = 150   # sample targets from this many most-frequent words of the target level
+
+[[profiles]]
+name = "hsk1"
+hsk_level = 1
+target_level = 2
+
+[[profiles]]
+name = "hsk1-2"
+hsk_level = 2
+target_level = 3
+
+[[profiles]]
+name = "hsk1-3"
+hsk_level = 3
+target_level = 4
+
+# Your own Anki export (not committed). Uncomment once data/private/anki.txt exists.
+# [[profiles]]
+# name = "anki"
+# wordlist = "data/private/anki.txt"
+# target_level = 3
+
+[[topics]]
+id = "supermarket"
+text = "在超市买东西 (shopping at the supermarket)"
+
+[[topics]]
+id = "weekend"
+text = "周末和朋友见面 (meeting a friend on the weekend)"
+
+[[topics]]
+id = "weather"
+text = "天气和季节 (the weather and the seasons)"
+
+[[topics]]
+id = "restaurant"
+text = "在饭店吃饭 (eating at a restaurant)"
+
+[[topics]]
+id = "train"
+text = "坐火车去旅行 (taking a train trip)"
+
+[[difficulties]]
+name = "gentle"
+targets = 2
+min_coverage = 0.95
+
+[[difficulties]]
+name = "stretch"
+targets = 4
+min_coverage = 0.90
